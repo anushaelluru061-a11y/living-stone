@@ -1,0 +1,150 @@
+import React, { useState } from 'react';
+import { Copy, Check } from 'lucide-react';
+
+interface CodeBlockProps {
+    code: string;
+    language?: string;
+    title?: string;
+}
+
+// Simple syntax highlighting for Python
+function highlightPython(code: string): React.ReactNode[] {
+    const lines = code.split('\n');
+    return lines.map((line, lineIdx) => {
+        const parts: React.ReactNode[] = [];
+        let remaining = line;
+        let key = 0;
+
+        // Keywords
+        const keywords = /\b(def|class|import|from|return|if|elif|else|for|while|in|not|and|or|True|False|None|try|except|finally|with|as|pass|break|continue|lambda|yield|global|nonlocal|del|raise|assert|is)\b/g;
+        // Strings
+        const strings = /("""[\s\S]*?"""|'''[\s\S]*?'''|"[^"]*"|'[^']*')/g;
+        // Comments
+        const comments = /(#.*$)/;
+        // Numbers
+        const numbers = /\b(\d+\.?\d*)\b/g;
+        // Functions
+        const functions = /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*(?=\()/g;
+
+        // Simple tokenizer
+        const tokens: Array<{ type: string; value: string }> = [];
+        let i = 0;
+        const chars = line.split('');
+
+        while (i < chars.length) {
+            // Comment
+            if (chars[i] === '#') {
+                tokens.push({ type: 'comment', value: line.slice(i) });
+                break;
+            }
+            // String
+            if (chars[i] === '"' || chars[i] === "'") {
+                const quote = chars[i];
+                let j = i + 1;
+                while (j < chars.length && chars[j] !== quote) j++;
+                tokens.push({ type: 'string', value: line.slice(i, j + 1) });
+                i = j + 1;
+                continue;
+            }
+            // Number
+            if (/\d/.test(chars[i])) {
+                let j = i;
+                while (j < chars.length && /[\d.]/.test(chars[j])) j++;
+                tokens.push({ type: 'number', value: line.slice(i, j) });
+                i = j;
+                continue;
+            }
+            // Word (keyword, function, identifier)
+            if (/[a-zA-Z_]/.test(chars[i])) {
+                let j = i;
+                while (j < chars.length && /[a-zA-Z0-9_]/.test(chars[j])) j++;
+                const word = line.slice(i, j);
+                const kws = ['def', 'class', 'import', 'from', 'return', 'if', 'elif', 'else', 'for', 'while', 'in', 'not', 'and', 'or', 'True', 'False', 'None', 'try', 'except', 'finally', 'with', 'as', 'pass', 'break', 'continue', 'lambda', 'yield', 'global', 'nonlocal', 'del', 'raise', 'assert', 'is', 'print', 'len', 'range', 'type', 'int', 'str', 'float', 'list', 'dict', 'set', 'tuple'];
+                if (kws.includes(word)) {
+                    tokens.push({ type: 'keyword', value: word });
+                } else if (j < chars.length && chars[j] === '(') {
+                    tokens.push({ type: 'function', value: word });
+                } else {
+                    tokens.push({ type: 'identifier', value: word });
+                }
+                i = j;
+                continue;
+            }
+            // Operator
+            if (/[+\-*/%=<>!&|^~]/.test(chars[i])) {
+                tokens.push({ type: 'operator', value: chars[i] });
+                i++;
+                continue;
+            }
+            tokens.push({ type: 'plain', value: chars[i] });
+            i++;
+        }
+
+        return (
+            <div key={lineIdx} className="table-row">
+                <span className="table-cell pr-4 select-none text-right w-8 text-muted-foreground opacity-40 text-xs">
+                    {lineIdx + 1}
+                </span>
+                <span className="table-cell">
+                    {tokens.map((token, ti) => {
+                        const colorMap: Record<string, string> = {
+                            keyword: 'text-neon-cyan font-semibold',
+                            string: 'text-neon-yellow',
+                            comment: 'text-muted-foreground italic',
+                            number: 'text-orange-400',
+                            function: 'text-neon-green',
+                            operator: 'text-pink-400',
+                            identifier: 'text-foreground',
+                            plain: 'text-foreground',
+                        };
+                        return (
+                            <span key={ti} className={colorMap[token.type] || 'text-foreground'}>
+                                {token.value}
+                            </span>
+                        );
+                    })}
+                </span>
+            </div>
+        );
+    });
+}
+
+export default function CodeBlock({ code, language = 'python', title }: CodeBlockProps) {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <div className="rounded-lg border border-border overflow-hidden my-4">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-2 bg-secondary border-b border-border">
+                <div className="flex items-center gap-2">
+                    <div className="flex gap-1.5">
+                        <div className="w-3 h-3 rounded-full bg-destructive/70" />
+                        <div className="w-3 h-3 rounded-full bg-neon-yellow/70" />
+                        <div className="w-3 h-3 rounded-full bg-neon-green/70" />
+                    </div>
+                    {title && <span className="text-xs text-muted-foreground font-mono ml-2">{title}</span>}
+                    {!title && <span className="text-xs text-muted-foreground font-mono ml-2">{language}</span>}
+                </div>
+                <button
+                    onClick={handleCopy}
+                    className="text-muted-foreground hover:text-neon-green transition-colors p-1 rounded"
+                    title="Copy code"
+                >
+                    {copied ? <Check size={14} className="text-neon-green" /> : <Copy size={14} />}
+                </button>
+            </div>
+            {/* Code */}
+            <div className="bg-terminal-bg p-4 overflow-x-auto scrollbar-thin">
+                <div className="table w-full font-mono text-sm leading-relaxed">
+                    {highlightPython(code)}
+                </div>
+            </div>
+        </div>
+    );
+}

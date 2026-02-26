@@ -1,0 +1,111 @@
+import React from 'react';
+import { useNavigate } from '@tanstack/react-router';
+import { LearningModule, ContentType } from '../backend';
+import { Lock, Unlock, ChevronRight, Code2, BookOpen, Lightbulb } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+
+interface ModuleCardProps {
+    module: LearningModule;
+    completionRate?: number;
+    isLocked?: boolean;
+}
+
+const contentTypeIcon: Record<ContentType, React.ReactNode> = {
+    [ContentType.concept]: <BookOpen size={14} />,
+    [ContentType.example]: <Lightbulb size={14} />,
+    [ContentType.exercise]: <Code2 size={14} />,
+};
+
+const contentTypeLabel: Record<ContentType, string> = {
+    [ContentType.concept]: 'Concept',
+    [ContentType.example]: 'Example',
+    [ContentType.exercise]: 'Exercise',
+};
+
+const difficultyLabel = (d: bigint) => {
+    const n = Number(d);
+    if (n <= 1) return { label: 'Beginner', color: 'text-neon-green' };
+    if (n <= 2) return { label: 'Easy', color: 'text-neon-cyan' };
+    if (n <= 3) return { label: 'Medium', color: 'text-neon-yellow' };
+    if (n <= 4) return { label: 'Hard', color: 'text-orange-400' };
+    return { label: 'Expert', color: 'text-destructive' };
+};
+
+export default function ModuleCard({ module, completionRate = 0, isLocked = false }: ModuleCardProps) {
+    const navigate = useNavigate();
+    const diff = difficultyLabel(module.difficulty);
+
+    const handleClick = () => {
+        if (!isLocked) {
+            navigate({ to: '/lesson/$moduleId', params: { moduleId: module.id.toString() } });
+        }
+    };
+
+    return (
+        <div
+            onClick={handleClick}
+            className={`terminal-card p-5 transition-all duration-200 ${
+                isLocked
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'cursor-pointer hover:glow-border-green hover:scale-[1.01]'
+            }`}
+        >
+            <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                        {isLocked ? (
+                            <Lock size={14} className="text-muted-foreground flex-shrink-0" />
+                        ) : (
+                            <Unlock size={14} className="text-neon-green flex-shrink-0" />
+                        )}
+                        <h3 className="font-mono font-semibold text-sm text-foreground truncate">{module.name}</h3>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-xs font-mono ${diff.color}`}>{diff.label}</span>
+                        <span className="text-muted-foreground text-xs">·</span>
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                            {contentTypeIcon[module.lessonType]}
+                            {contentTypeLabel[module.lessonType]}
+                        </span>
+                    </div>
+                </div>
+                {!isLocked && (
+                    <ChevronRight size={16} className="text-neon-green flex-shrink-0 ml-2" />
+                )}
+            </div>
+
+            {/* Topics */}
+            <div className="flex flex-wrap gap-1 mb-3">
+                {module.topics.slice(0, 4).map((topic) => (
+                    <Badge
+                        key={topic}
+                        variant="secondary"
+                        className="text-xs font-mono bg-secondary text-muted-foreground border-border"
+                    >
+                        {topic}
+                    </Badge>
+                ))}
+                {module.topics.length > 4 && (
+                    <Badge variant="secondary" className="text-xs font-mono bg-secondary text-muted-foreground">
+                        +{module.topics.length - 4}
+                    </Badge>
+                )}
+            </div>
+
+            {/* Progress */}
+            <div className="space-y-1">
+                <div className="flex justify-between text-xs font-mono">
+                    <span className="text-muted-foreground">Progress</span>
+                    <span className={completionRate > 0 ? 'text-neon-green' : 'text-muted-foreground'}>
+                        {completionRate}%
+                    </span>
+                </div>
+                <Progress
+                    value={completionRate}
+                    className="h-1.5 bg-secondary"
+                />
+            </div>
+        </div>
+    );
+}

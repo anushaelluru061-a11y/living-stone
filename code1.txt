@@ -1,0 +1,74 @@
+{
+  "summaryUpdate": "AI-powered educational website that teaches Python and Machine Learning, with adaptive learning that automatically adjusts lessons, difficulty, and practice exercises based on each student's performance and learning style.",
+  "new_feature_requests_to_add": [
+    {
+      "id": "AR-1",
+      "summary": "Adaptive lesson system that adjusts content difficulty based on student performance",
+      "reqIds": [
+        
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Learning style detection and personalized curriculum generation",
+      "reqIds": [
+        
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Interactive Python coding practice environment with AI feedback",
+      "reqIds": [
+        
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Machine Learning course modules with hands-on exercises",
+      "reqIds": [
+        
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Student progress tracking and performance analytics dashboard",
+      "reqIds": [
+        
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "User authentication and student profile management",
+      "reqIds": [
+        
+      ],
+      "status": "pending"
+    }
+  ],
+  "new_feature_requests_to_remove": [
+    
+  ],
+  "architecturalNotesToAdd": [
+    "AI-driven adaptive engine to analyze student performance and dynamically adjust lesson paths and difficulty",
+    "In-browser code editor/sandbox for Python practice with real-time AI feedback"
+  ],
+  "architecturalNotesToRemove": [
+    
+  ],
+  "knownIssuesToAdd": [
+    
+  ],
+  "knownIssuesToRemove": [
+    
+  ],
+  "isFixRequest": false,
+  "imageRequirements": null,
+  "generatedImages": null,
+  "gameProjectType": "none",
+  "projectName": "AdaptLearn AI"
+}

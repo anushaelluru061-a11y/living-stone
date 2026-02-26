@@ -1,0 +1,169 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useActor } from './useActor';
+import { UserProfile, LearningModule, ModuleProgress, TopicProgress } from '../backend';
+
+// ─── User Profile ────────────────────────────────────────────────────────────
+
+export function useGetCallerUserProfile() {
+    const { actor, isFetching: actorFetching } = useActor();
+
+    const query = useQuery<UserProfile | null>({
+        queryKey: ['currentUserProfile'],
+        queryFn: async () => {
+            if (!actor) throw new Error('Actor not available');
+            return actor.getCallerUserProfile();
+        },
+        enabled: !!actor && !actorFetching,
+        retry: false,
+    });
+
+    return {
+        ...query,
+        isLoading: actorFetching || query.isLoading,
+        isFetched: !!actor && query.isFetched,
+    };
+}
+
+export function useSaveCallerUserProfile() {
+    const { actor } = useActor();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (profile: UserProfile) => {
+            if (!actor) throw new Error('Actor not available');
+            return actor.saveCallerUserProfile(profile);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+        },
+    });
+}
+
+// ─── Learning Modules ────────────────────────────────────────────────────────
+
+export function useGetLearningModule(moduleId: bigint | null) {
+    const { actor, isFetching: actorFetching } = useActor();
+
+    return useQuery<LearningModule>({
+        queryKey: ['learningModule', moduleId?.toString()],
+        queryFn: async () => {
+            if (!actor || moduleId === null) throw new Error('Actor or moduleId not available');
+            return actor.getLearningModule(moduleId);
+        },
+        enabled: !!actor && !actorFetching && moduleId !== null,
+        retry: false,
+    });
+}
+
+export function useGetMultipleLearningModules(moduleIds: bigint[]) {
+    const { actor, isFetching: actorFetching } = useActor();
+
+    return useQuery<LearningModule[]>({
+        queryKey: ['learningModules', moduleIds.map(id => id.toString()).join(',')],
+        queryFn: async () => {
+            if (!actor) throw new Error('Actor not available');
+            const results: LearningModule[] = [];
+            for (const id of moduleIds) {
+                try {
+                    const mod = await actor.getLearningModule(id);
+                    results.push(mod);
+                } catch {
+                    // Module doesn't exist, skip
+                }
+            }
+            return results;
+        },
+        enabled: !!actor && !actorFetching && moduleIds.length > 0,
+        retry: false,
+    });
+}
+
+// ─── Module Progress ─────────────────────────────────────────────────────────
+
+export function useGetModuleProgress(moduleId: bigint | null) {
+    const { actor, isFetching: actorFetching } = useActor();
+
+    return useQuery<ModuleProgress>({
+        queryKey: ['moduleProgress', moduleId?.toString()],
+        queryFn: async () => {
+            if (!actor || moduleId === null) throw new Error('Actor or moduleId not available');
+            return actor.getModuleProgress(moduleId);
+        },
+        enabled: !!actor && !actorFetching && moduleId !== null,
+        retry: false,
+    });
+}
+
+// ─── Topic Progress ──────────────────────────────────────────────────────────
+
+export function useGetTopicProgress(topic: string | null) {
+    const { actor, isFetching: actorFetching } = useActor();
+
+    return useQuery<TopicProgress>({
+        queryKey: ['topicProgress', topic],
+        queryFn: async () => {
+            if (!actor || !topic) throw new Error('Actor or topic not available');
+            return actor.getTopicProgress(topic);
+        },
+        enabled: !!actor && !actorFetching && !!topic,
+        retry: false,
+    });
+}
+
+// ─── Topic Performance ───────────────────────────────────────────────────────
+
+export function useGetTopicPerformance(topic: string | null) {
+    const { actor, isFetching: actorFetching } = useActor();
+
+    return useQuery<{ averageScore: bigint }>({
+        queryKey: ['topicPerformance', topic],
+        queryFn: async () => {
+            if (!actor || !topic) throw new Error('Actor or topic not available');
+            return actor.getTopicPerformance(topic);
+        },
+        enabled: !!actor && !actorFetching && !!topic,
+        retry: false,
+    });
+}
+
+export function useGetMultipleTopicPerformances(topics: string[]) {
+    const { actor, isFetching: actorFetching } = useActor();
+
+    return useQuery<Array<{ topic: string; averageScore: number }>>({
+        queryKey: ['topicPerformances', topics.join(',')],
+        queryFn: async () => {
+            if (!actor) throw new Error('Actor not available');
+            const results: Array<{ topic: string; averageScore: number }> = [];
+            for (const topic of topics) {
+                try {
+                    const perf = await actor.getTopicPerformance(topic);
+                    results.push({ topic, averageScore: Number(perf.averageScore) });
+                } catch {
+                    results.push({ topic, averageScore: 0 });
+                }
+            }
+            return results;
+        },
+        enabled: !!actor && !actorFetching && topics.length > 0,
+        retry: false,
+    });
+}
+
+// ─── Topic Completion Rate ───────────────────────────────────────────────────
+
+export function useGetTopicCompletionRate(topic: string | null) {
+    const { actor, isFetching: actorFetching } = useActor();
+    const { identity } = useActor() as any;
+
+    return useQuery({
+        queryKey: ['topicCompletionRate', topic],
+        queryFn: async () => {
+            if (!actor || !topic) throw new Error('Actor or topic not available');
+            // We need the caller's principal - use a placeholder approach
+            // The backend uses caller context, so we pass the identity principal
+            throw new Error('Requires student ID');
+        },
+        enabled: false, // Disabled - requires studentId which we get from identity
+        retry: false,
+    });
+}
